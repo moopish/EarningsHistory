@@ -1,4 +1,4 @@
-package ehist.data.date;
+package ehist.mem.date;
 
 /**
  * <p>
@@ -60,29 +60,28 @@ public enum Day {
 
     /**
      *  Checks to see if a day is in range of the days of the week.
-     * Out of range values will throw a {@link InvalidDayException}.
-     * @throws InvalidDayException if the day value is out of range
+     * Out of range values will throw a {@link RuntimeException}.
+     * @throws RuntimeException if the day value is out of range
      * @param day the number to check if in range
      */
     protected static void checkRange(int day) {
-        if (day > 7 || day <= 0) {
-            throw new InvalidDayException(day);
-        }
+        if (day > 7 || day <= 0)
+            throw new RuntimeException(day + " is not a valid value for the days of the week (1 <= day <= 7)");
     }
 
     /**
      *  Checks to see if a given date is in range.
-     * @throws Month.InvalidMonthException if the month value is not associated with a month
-     * @throws InvalidDayException if the day value is out of range
+     * @throws RuntimeException if the month value is not associated with a month
+     * @throws RuntimeException if the day value is out of range
      * @param year  the year of the date to check
      * @param month the month of the date to check
      * @param day   the day of the date to check
      */
     protected static void checkRange(int year, int month, int day) {
         int days = Month.getMonth(month).getDays(Year.isLeapYear(year));
-        if (day > days || days <= 0) {
-            throw new InvalidDayException(year, month, day);
-        }
+        if (day > days || days <= 0)
+            throw new RuntimeException(String.format("%d is not a valid day value for %s %d (1 <= day <= %d)",
+                    day, Month.getMonth(month).getName(), year, Month.getMonth(month).getDays(Year.isLeapYear(year))));
     }
 
     /**
@@ -103,14 +102,11 @@ public enum Day {
             month -= 2;
         }
 
-        int C = year / 100;
-        int Y = year % 100;
+        int C = year / 100, Y = year % 100;
 
         int W = (day + (int)Math.floor(2.6 * month - 0.2) - 2 * C + Y + Y/4 + C/4);
 
-        if (W < 0) {
-            W += (-W/7 + 1) * 7;
-        }
+        if (W < 0) W += (-W/7 + 1) * 7;
 
         return (DAYS[W % 7]);
     }
@@ -141,7 +137,6 @@ public enum Day {
                     break;
                 default:
                     ret = (day + "th");
-                    break;
             }
         }
         return (ret);
@@ -149,7 +144,7 @@ public enum Day {
 
     /**
      *  Gets the day of the week associated with the given value.
-     * @throws InvalidDayException if the value is not associated with a day of the week
+     * @throws RuntimeException if the value is not associated with a day of the week
      * @param day the value of the day of the week to get
      * @return the day of the week associated with the given value
      */
@@ -170,34 +165,6 @@ public enum Day {
      */
     public String getShortForm() {
         return (short_form);
-    }
-
-    /**
-     * Distinguishes <tt>Day</tt> related exceptions from normal exceptions.
-     * @see Day
-     * @see Date.DateException
-     * @since EHist 1.0
-     */
-    public static class InvalidDayException extends Date.DateException {
-
-        /**
-         *  Used when the day is not a valid number for day of the week.
-         * @param day the day value
-         */
-        public InvalidDayException(int day) {
-            super(day + " is not a valid value for the days of the week (1 <= day <= 7)");
-        }
-
-        /**
-         *  Used when the day is not in the range of the month's potential days.
-         * @param year  the year of the date
-         * @param month the month of the date
-         * @param day   the day of the date
-         */
-        public InvalidDayException(int year, int month, int day) {
-            super (String.format("%d is not a valid day value for %s %d (1 <= day <= %d)",
-                    day, Month.getMonth(month).getName(), year, Month.getMonth(month).getDays(Year.isLeapYear(year))));
-        }
     }
 
 }

@@ -1,7 +1,8 @@
-package ehist.data.date;
+package ehist.mem.date;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * <p>
@@ -11,29 +12,22 @@ import java.util.Map;
  * </p><p>
  *  The <tt>Date</tt> class represents a specific date. Stores information
  * related to the year, month and day. To create a date use the method
- * {@link Date#getDate(int, int, int)} or {@link Date#getDate(int, Month, int)},
+ * {@link DateManager#getDate(int, int, int)} or {@link DateManager#getDate(int, Month, int)},
  * this is because this implementation of a date stores previously created dates
  * and this method will simply return the instance of the specified date if already
  * created. The retrieval of the date is constant time and will not slow the
  * application if a lot of dates are stored. The storage of date will also
- * not consume much memory as date are store in a minimal way.
+ * not consume much memory as date are store in a minimal way. //TODO Update
  * </p>
  *
  * @since EHist 1.0
  *
  * @author Michael van Dyk
  */
-public class Date implements Comparable<Date> {
-
-    /**
-     *  Stores all the previously made Date objects. If the date is attempted to be
-     * created again, it's current existing instance will be found in this before
-     * making another Date instance with the same date.
-     */
-    private final static Map<Integer, Date> DATE_MAP = new HashMap<>();
+public final class Date implements Comparable<Date> {
 
     /** The default formatter used in {@link Date#format()}. */
-    private static DateFormatter formatter = DateFormatter.YEAR_MM_DD;
+    private static final AtomicReference<DateFormatter> formatter = new AtomicReference<>(DateFormatter.YEAR_MM_DD);
 
     /**
      *  The value that is used to represent the date. The lowest 5 bits of
@@ -48,20 +42,13 @@ public class Date implements Comparable<Date> {
      *  Creates a date object.
      * @param date_val the compressed date value to store
      */
-    private Date(int date_val) {
+    protected Date(int date_val) {
         this.date_val = date_val;
     }
 
     @Override
     public int compareTo(Date o) {
         return (Integer.compareUnsigned(date_val, o.date_val));
-    }
-
-    /**
-     * @return the total number of Date objects stored
-     */
-    public static int datesStored() {
-        return (DATE_MAP.size());
     }
 
     /**
@@ -112,7 +99,7 @@ public class Date implements Comparable<Date> {
 
     /** @return the date formatted by the default formatter */
     public String format() {
-        return (formatter.format(this));
+        return (formatter.get().format(this));
     }
 
     /**
@@ -125,42 +112,10 @@ public class Date implements Comparable<Date> {
     }
 
     /**
-     *  Used to get a date object that represents the given year, month and day.
-     * This is to prevent multiple Date objects being made that represent the
-     * same date. If the date already has an associated object it is returned
-     * when called. If not a new Date object is created, stored and returned.
-     * @param year  the year of the date
-     * @param month the month of the date
-     * @param day   the day of the date
-     * @return a Date object that represents the given date values
+     * @return the date value stored by this date
      */
-    public static Date getDate(int year, int month, int day) {
-        int date_val = toDateVal(year, month, day);
-        Date get = DATE_MAP.get(date_val);
-
-        if (get == null) {
-            Year.checkRange(year);
-            /* No month check since Day.checkRange does the same check */
-            Day.checkRange(year, month, day);
-
-            DATE_MAP.put(date_val, get = new Date(date_val));
-        }
-
-        return (get);
-    }
-
-    /**
-     *  Used to get a date object that represents the given year, month and day.
-     * This is to prevent multiple Date objects being made that represent the
-     * same date. If the date already has an associated object it is returned
-     * when called. If not a new Date object is created, stored and returned.
-     * @param year  the year of the date
-     * @param month the month of the date
-     * @param day   the day of the date
-     * @return a Date object that represents the given date values
-     */
-    public static Date getDate(int year, Month month, int day) {
-        return (getDate(year, month.getMonthNumber(), day));
+    protected int getDateVal() {
+        return (date_val);
     }
 
     /**
@@ -182,7 +137,7 @@ public class Date implements Comparable<Date> {
      * @return the default formatter
      */
     public static DateFormatter getFormatter() {
-        return (formatter);
+        return (formatter.get());
     }
 
     /**
@@ -234,7 +189,7 @@ public class Date implements Comparable<Date> {
      * @param formatter the formatter that will be the new default
      */
     public static void setFormatter(DateFormatter formatter) {
-        Date.formatter = formatter;
+        Date.formatter.set(formatter);
     }
 
     /**
@@ -244,29 +199,12 @@ public class Date implements Comparable<Date> {
      * @param day   the day of the date
      * @return an integer that stores the date information
      */
-    private static int toDateVal(int year, int month, int day) {
+    protected static int toDateVal(int year, int month, int day) {
         return ((year << 9) | (month << 5) | day);
     }
 
     @Override
     public String toString() {
         return (format());
-    }
-
-    /**
-     * Distinguishes <tt>Date</tt> related exceptions from normal exceptions.
-     * @see Date
-     * @see Date.DateException
-     * @since EHist 1.0
-     */
-    public static class DateException extends RuntimeException {
-
-        /**
-         * Allows for the exception to be thrown with a descriptive message.
-         * @param message the message to describe the exception
-         */
-        public DateException(String message) {
-            super(message);
-        }
     }
 }
